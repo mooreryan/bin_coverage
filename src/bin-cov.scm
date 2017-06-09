@@ -1,4 +1,5 @@
 (declare (uses srfi-1
+               srfi-13
                posix))
 
 (define VERSION "0.1.0")
