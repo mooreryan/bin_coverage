@@ -28,7 +28,7 @@ Run `make test` to see if everything went right.
 ### Input files
 
 - SAM or BAM file with recruitment to contigs
-- Text file with one contig name per line.  These contigs will be treated as a single "bin" and included in the same coverage plot.
+- Text file with one contig name per line. These contigs will be treated as a single "bin" and included in the same coverage plot. Don't include the `>` in the name of the sequence. Note, if the names don't seem to match, try to include only up to the first space in the names file.
 
 ### Synopsis
 
