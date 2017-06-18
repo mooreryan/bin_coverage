@@ -19,6 +19,7 @@
 (define (samtools-depth bam-fname depth-fname)
   (system (sprintf "~a depth -aa ~a > ~a" SAMTOOLS bam-fname depth-fname)))
 
+
 ;; (define (keep-node? node names-to-keep)
 ;;   (member node names-to-keep))
 
@@ -30,9 +31,7 @@
     (define (rdf-iter graph-lines idx start-posns names keep)
       (let ((line (read-line port)))
         (if (eof-object? line)
-            (values (reverse graph-lines)
-                    (reverse start-posns)
-                    (reverse names))
+            (values graph-lines start-posns names)
             (let* ((line-split (string-split line "\t"))
                    (node (first line-split))
                    (pos (string->number (second line-split)))
