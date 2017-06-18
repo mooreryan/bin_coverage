@@ -46,5 +46,6 @@ test: $(MAIN)
 
 $(MAIN):
 	mkdir -p bin
+	$(CC) -c $(SRC)/utils.scm
 	$(CC) -c $(SRC)/bin-cov.scm
-	$(CC) -o $(BIN)/$@ $(SRC)/bin-cov.o
+	$(CC) -o $(BIN)/$@ $(SRC)/utils.o $(SRC)/bin-cov.o

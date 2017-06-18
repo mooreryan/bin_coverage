@@ -1,8 +1,10 @@
 (declare (uses srfi-1
                srfi-13
-               posix))
+               posix
+               utils))
+(declare (uses bc-utils))
 
-(define VERSION "0.1.0")
+(define VERSION "0.1.1")
 
 ;; The keys of the hash are the contig names for faster lookup
 (define (read-contig-names fname)
@@ -17,46 +19,64 @@
     (rcn-iter)))
 
 (define (samtools-depth bam-fname depth-fname)
-  (system (sprintf "~a depth -aa ~a > ~a" SAMTOOLS bam-fname depth-fname)))
-
-
-;; (define (keep-node? node names-to-keep)
-;;   (member node names-to-keep))
-
-(define (keep-node? node names-to-keep)
-  (hash-table-exists? names-to-keep node))
+  (system* "~a depth -aa ~a > ~a" SAMTOOLS bam-fname depth-fname))
 
 (define (read-depth-file fname names-to-keep)
+
+  (define (keep-node? node names-to-keep)
+    (hash-table-exists? names-to-keep node))
+
+  (define (parse-depth-line line)
+    (let* ((line-split (string-split line "\t"))
+           (node (first line-split))
+           (pos (string->number (second line-split)))
+           (cov (third line-split))
+           (new-contig (= 1 pos)))
+      (values node pos cov new-contig)))
+
+  (define (keep-new-contig? new-contig node names-to-keep)
+    (and new-contig (keep-node? node names-to-keep)))
+
+  (define output-err-msg
+    (string-join (list "No positions to graph."
+                       "Do the names in the contig names file"
+                       "match those in the bam/sam file?")
+                 " "))
+
+  (define (validate-and-return graph-lines start-posns names)
+    (abort-if-empty graph-lines output-err-msg)
+    (abort-if-empty start-posns output-err-msg)
+    (abort-if-empty names output-err-msg)
+    (values graph-lines start-posns names))
+
   (let ((port (open-input-file fname)))
     (define (rdf-iter graph-lines idx start-posns names keep)
       (let ((line (read-line port)))
         (if (eof-object? line)
-            (values graph-lines start-posns names)
-            (let* ((line-split (string-split line "\t"))
-                   (node (first line-split))
-                   (pos (string->number (second line-split)))
-                   (cov (third line-split))
-                   (new-contig (= 1 pos)))
-              ;; Check to see if keep should flip
-              (cond ((and new-contig (keep-node? node names-to-keep))
+            (validate-and-return graph-lines start-posns names)
+            (let-values (((node pos cov new-contig) (parse-depth-line line)))
+              (cond ((keep-new-contig? new-contig node names-to-keep)
                      (set! keep #t))
                     (new-contig (set! keep #f))
                     (else 'pass))
-              (if keep
-                  (rdf-iter (cons (list idx cov) graph-lines)
-                            (add1 idx)
-                            (if new-contig
-                                (cons idx start-posns)
-                                start-posns)
-                            (if new-contig
-                                (cons node names)
-                                names)
-                            keep)
-                  (rdf-iter graph-lines
-                            idx
-                            start-posns
-                            names
-                            keep))))))
+              (cond ((and new-contig keep)
+                     (rdf-iter (cons (list idx cov) graph-lines)
+                               (add1 idx)
+                               (cons idx start-posns)
+                               (cons node names)
+                               keep))
+                    (keep
+                     (rdf-iter (cons (list idx cov) graph-lines)
+                               (add1 idx)
+                               start-posns
+                               names
+                               keep))
+                    (else
+                     (rdf-iter graph-lines
+                               idx
+                               start-posns
+                               names
+                               keep)))))))
     (rdf-iter '() 1 '() '() #f)))
 
 (define (print-graph-lines graph-lines graph-lines-fname)
@@ -94,23 +114,8 @@
     (fprintf port "~a~%" rscript)))
 
 (define (run-rscript rscript-fname)
-  (system (sprintf "Rscript '~a'" rscript-fname)))
+  (system* "Rscript '~a'" rscript-fname))
 
-(define (try-mkdir path)
-  (if (directory-exists? outdir)
-      (begin
-        (fprintf (current-error-port)
-                 "ERROR -- the directory '~a' already exists~%"
-                 outdir)
-        (exit 1))
-      (create-directory outdir)))
-
-(define (check-file fname)
-  (if (not (file-exists? fname))
-      (begin (fprintf (current-error-port)
-                      "ERROR -- File '~a' does not exist"
-                      fname)
-             (exit 1))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -144,31 +149,26 @@
 
 (fprintf (current-error-port)
          "LOG -- Reading depth file~%")
-(define-values (graph-lines start-posns names) (read-depth-file depth-fname names-to-keep))
+(define-values
+  (graph-lines start-posns names)
+  (read-depth-file depth-fname names-to-keep))
 
-
-(fprintf (current-error-port)
-         "LOG -- Printing graph lines~%")
+(print-log "Printing graph lines")
 (print-graph-lines graph-lines graph-lines-fname)
 
-(fprintf (current-error-port)
-         "LOG -- Printing start posns lines~%")
+(print-log "Printing start posns lines")
 (print-start-posns start-posns start-posns-fname)
 
-(fprintf (current-error-port)
-         "LOG -- Printing contig names~%")
+(print-log "Printing contig names")
 (print-start-posns names names-fname)
 
-(fprintf (current-error-port)
-         "LOG -- Writing R script~%")
+(print-log "Writing R script")
 (write-rscript rscript-fname)
 
-(fprintf (current-error-port)
-         "LOG -- Running rscript~%")
+(print-log "Running rscript")
 (run-rscript rscript-fname)
 
-(fprintf (current-error-port)
-         "LOG -- Cleaning up~%")
+;; (print-log "Cleaning up")
 ;; (delete-file depth-fname)
 ;; (delete-file graph-lines-fname)
 ;; (delete-file start-posns-fname)

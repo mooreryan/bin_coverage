@@ -6,3 +6,4 @@ src/*.o
 bin
 .DS_STORE
 .Rhistory
+test-files/apples.txt
