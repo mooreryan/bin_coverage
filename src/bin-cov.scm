@@ -4,7 +4,7 @@
                utils))
 (declare (uses bc-utils))
 
-(define VERSION "0.1.1")
+(define VERSION "0.1.2")
 
 ;; The keys of the hash are the contig names for faster lookup
 (define (read-contig-names fname)
@@ -143,9 +143,14 @@
          "LOG -- Reading contigs fname~%")
 (define names-to-keep (read-contig-names bin-contigs-fname))
 
-(fprintf (current-error-port)
-         "LOG -- Running samtools depth~%")
-(samtools-depth bam-fname depth-fname)
+(if (file-exists? depth-fname)
+    (fprintf (current-error-port)
+             "INFO -- Depth file (~a) exists, will use it~%"
+             depth-fname)
+    (begin
+      (fprintf (current-error-port)
+               "LOG -- Running samtools depth~%")
+      (samtools-depth bam-fname depth-fname)))
 
 (fprintf (current-error-port)
          "LOG -- Reading depth file~%")
