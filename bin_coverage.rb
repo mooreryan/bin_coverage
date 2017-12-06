@@ -77,13 +77,11 @@ end
 
 Utils.time_it "Writing graph lines", AbortIf::logger do
   bin2contigs.keys.each_with_index do |bin, idx|
-    AbortIf::logger.info { "#{bin} #{idx}" }
-
     contigs = bin2contigs[bin]
-    graph_lines_fname = File.join opts[:outdir], opts[:outbase] + ".bin_#{idx}_lines"
-    start_posns_fname = File.join opts[:outdir], opts[:outbase] + ".bin_#{idx}_start_posns"
-    png_fname = File.join opts[:outdir], opts[:outbase] + ".bin_#{idx}_coverage_plot.png"
-    rscript_fname = File.join opts[:outdir], opts[:outbase] + ".bin_#{idx}_plotter.r"
+    graph_lines_fname = File.join opts[:outdir], opts[:outbase] + ".#{bin}_lines"
+    start_posns_fname = File.join opts[:outdir], opts[:outbase] + ".#{bin}_start_posns"
+    png_fname = File.join opts[:outdir], opts[:outbase] + ".#{bin}_coverage_plot.png"
+    rscript_fname = File.join opts[:outdir], opts[:outbase] + ".#{bin}_plotter.r"
 
     overall_posn = 1
 
@@ -111,11 +109,11 @@ dat <- read.table("#{graph_lines_fname}", sep="\\t", header=T);
 start.posns <- read.table("#{start_posns_fname}", sep="\\t", header=T);
 width.mult <- nrow(dat) / 50000
 png("#{png_fname}", units = "in", res=120, width = max(1 * width.mult, 11), height=5);
-plot(dat, type = "l", xlab="Position", ylab = "Coverage");
-lapply(start.posns$start, FUN=function(pos){abline(v=pos, col="blue")});
+plot(dat, type = "l", xlab="Position", ylab = "Coverage", main="#{bin}");
+invisible(lapply(start.posns$start, FUN=function(pos){abline(v=pos, col="blue")}));
 names <- start.posns$contig
 for(idx in 1:length(names)){text(cex = 0.75, srt=90, col="red", pos=4, x=start.posns$start[idx], y = max(dat$coverage)/2, names[idx])};
-  dev.off();
+invisible(dev.off());
 }
 
     File.open(rscript_fname, "w") do |f|
