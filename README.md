@@ -1,37 +1,48 @@
 # Bin Coverage
 
-Make chart with coverage of contigs in a bin.
+Make chart with coverage of contigs in bunches of bins.
 
 ## Install
 
-### From source
+### Dependencies
 
-To compile from source, you need the [Chicken Scheme compiler](http://code.call-cc.org/).
+The following RubyGems are required.
 
-Clone the repository, `cd` into the directory and type `make` into the terminal.  Optionally, you can type `make install` to install.
+- aai
+- abort_if
+- trollop
 
-### Binaries
+Install them like so
 
-Check the [GitHub release tab](https://github.com/mooreryan/bin_coverage/releases) to get the latest pre-compiled binaries.
+```bash
+$ gem install aai abort_if trollop
+```
 
-### Run the tests
+Also, you need a version of Samtools that supports the `-aa` option, and the `Rscript` program to run R from the command line.
 
-Run `make test` to see if everything went right.
+### Get the code
+
+Using git
+
+```bash
+$ git clone https://github.com/mooreryan/bin_coverage.git
+```
+
+In that folder you will have a script called `bin_coverage.rb`.  That's all you need.  If you want, you can symlink it somewhere on your path.  Perhaps like this
+
+```bash
+$ ln -s $PWD/bin_coverage.rb /usr/local/bin/bin_coverage.rb
+```
 
 ## Usage
 
-### Requirements
+To see the help message, type
 
-- A version of Samtools that has the `-aa` option.
-- `Rscript` program (to run the R scripts)
+```bash
+$ bin_coverage.rb -h
+```
 
 ### Input files
 
-- SAM or BAM file with recruitment to contigs
-- Text file with one contig name per line. These contigs will be treated as a single "bin" and included in the same coverage plot. Don't include the `>` in the name of the sequence. Note, if the names don't seem to match, try to include only up to the first space in the names file.
-
-### Synopsis
-
-```
-USAGE: bin-cov /path/to/samtools recruitment.bam contig-names.txt
-```
+- BAM file with recruitment to contigs
+- Two column, tab delimited text file.  The first column is bin name, the second column is contig name.  Contigs in the same bin will show up in the same coverage plot.  Don't include the `>` in the name of the sequence. Note, if the names don't seem to match, try to include only up to the first space in the names file.

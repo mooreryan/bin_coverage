@@ -1,0 +1,8 @@
+bin1	S6_NODE_1
+bin1	S6_NODE_4
+bin1	S6_NODE_32
+bin2	S6_NODE_34
+bin2	S6_NODE_37
+bin3	S6_NODE_42
+bin1	S6_NODE_70
+bin3	S6_NODE_71

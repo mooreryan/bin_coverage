@@ -1,10 +1,3 @@
-test-files/recbig.bam
-test-files/*.bin-cov.*
-src/pfa.scm
-release
-src/*.o
-bin
 .DS_STORE
 .Rhistory
-test-files/apples.txt
-test-files/jawn
+test_files/output
