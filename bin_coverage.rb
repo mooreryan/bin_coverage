@@ -15,7 +15,7 @@ end
 
 include AbortIf
 
-VERSION = "v0.3.0"
+VERSION = "v0.3.1"
 
 opts = Optimist.options do
   version VERSION
@@ -39,7 +39,6 @@ opts = Optimist.options do
   opt(:names, "Names file", type: :string)
   opt(:outdir, "Output directory", default: ".")
   opt(:outbase, "Basename for output", default: "snazzy")
-  opt(:cpus, "Number of cpus to use", default: 4)
   opt(:fast, "Use this option to filter contigs with samtools view")
 end
 
