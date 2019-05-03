@@ -15,7 +15,7 @@ end
 
 include AbortIf
 
-VERSION = "v0.2.0"
+VERSION = "v0.3.0"
 
 opts = Optimist.options do
   version VERSION
@@ -27,6 +27,10 @@ opts = Optimist.options do
   Names file is two tab delimited columns.  First column is bin name,
   second column is contig name.
 
+  --fast will probably break with large set of input contigs.  If you
+    get some weird errors or things aren't working with --fast
+    enabled, and you have a lot of contigs, try without --fast.
+
   Options:
   EOS
 
@@ -36,6 +40,7 @@ opts = Optimist.options do
   opt(:outdir, "Output directory", default: ".")
   opt(:outbase, "Basename for output", default: "snazzy")
   opt(:cpus, "Number of cpus to use", default: 4)
+  opt(:fast, "Use this option to filter contigs with samtools view")
 end
 
 abort_unless opts[:bam] && File.exist?(opts[:bam]),
@@ -66,7 +71,21 @@ Utils.time_it "Reading names file", AbortIf::logger do
 end
 
 depth_fname = File.join opts[:outdir], opts[:outbase] + ".depth.txt"
-cmd = "samtools depth -aa #{opts[:bam]} > #{depth_fname}"
+
+if opts[:fast]
+  # If bam index can't be found, make one
+  unless File.exist? "#{opts[:bam]}.bai"
+    cmd = "#{opts[:samtools]} index #{opts[:bam]}"
+    Utils.run_and_time_it! "Generating bam index", cmd
+  end
+
+  contig_str = all_contigs.to_a.join " "
+
+  cmd = "#{opts[:samtools]} view -h #{opts[:bam]} #{contig_str} " \
+        "| #{opts[:samtools]} depth -aa - > #{depth_fname}"
+else
+  cmd = "#{opts[:samtools]} depth -aa #{opts[:bam]} > #{depth_fname}"
+end
 Utils.run_and_time_it! "Calculating coverage", cmd
 
 
