@@ -5,7 +5,7 @@ Signal.trap("PIPE", "EXIT")
 require "abort_if"
 require "fileutils"
 require "aai"
-require "trollop"
+require "optimist"
 require "set"
 
 module Utils
@@ -15,8 +15,14 @@ end
 
 include AbortIf
 
-opts = Trollop.options do
+VERSION = "v0.2.0"
+
+opts = Optimist.options do
+  version VERSION
+
   banner <<-EOS
+
+  Version: #{VERSION}
 
   Names file is two tab delimited columns.  First column is bin name,
   second column is contig name.
@@ -43,10 +49,13 @@ FileUtils.mkdir_p opts[:outdir]
 bin2contigs = {}
 contig_cov = {}
 contig2start_posn = {}
+all_contigs = Set.new
 
 Utils.time_it "Reading names file", AbortIf::logger do
   File.open(opts[:names], "rt").each_line do |line|
     bin, contig = line.chomp.split "\t"
+
+    all_contigs << contig
 
     unless bin2contigs.has_key? bin
       bin2contigs[bin] = Set.new
@@ -65,13 +74,15 @@ Utils.time_it "Reading depth file", AbortIf::logger do
   File.open(depth_fname, "rt").each_line do |line|
     contig, posn, cov = line.chomp.split "\t"
 
-    unless contig_cov.has_key? contig
-      contig_cov[contig] = []
-    end
+    if all_contigs.include? contig
+      unless contig_cov.has_key? contig
+        contig_cov[contig] = []
+      end
 
-    # The assumption is that samtools depth -aa gives a coverage for
-    # every position.
-    contig_cov[contig] << cov
+      # The assumption is that samtools depth -aa gives a coverage for
+      # every position.
+      contig_cov[contig] << cov
+    end
   end
 end
 
